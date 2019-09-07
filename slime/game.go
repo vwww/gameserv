@@ -3,6 +3,8 @@ package slime
 import (
 	"math/rand"
 	"time"
+
+	"victorz.ca/gameserv/common/geom"
 )
 
 // Timing constants
@@ -154,7 +156,7 @@ func moveBallCollideNet(b *Ball) {
 	clamp(&closest.X, L, R)
 	clamp(&closest.Y, 0, NET_H)
 
-	var normal Vec2
+	var normal geom.Vec2
 
 	if closest.X == b.O.X && closest.Y == b.O.Y {
 		// inside: just force the ball to go up

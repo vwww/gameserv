@@ -9,11 +9,12 @@ import (
 	"os"
 )
 
+var slimeServer = slime.NewServer()
 var duelGame = duel.NewGame()
 
 func init() {
-	http.HandleFunc("/s/n", slime.HandleNum)
-	http.HandleFunc("/s", slime.HandlePlayer)
+	http.HandleFunc("/s/n", slimeServer.HandleNum)
+	http.HandleFunc("/s", slimeServer.HandlePlayer)
 	http.HandleFunc("/d/n", duelGame.HandleNum)
 	http.HandleFunc("/d", duelGame.HandlePlayer)
 	http.HandleFunc("/", hello)
@@ -25,10 +26,6 @@ func hello(res http.ResponseWriter, req *http.Request) {
 
 // Entry point of server program
 func main() {
-	// OLD background tasks
-	// slime_done := slime.LaunchCron()
-	// defer close(slime_done)
-
 	go duelGame.Run()
 
 	bind := ":8080"

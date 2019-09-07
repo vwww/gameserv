@@ -5,6 +5,8 @@ import (
 	"math"
 	"math/rand"
 	"sync"
+
+	"victorz.ca/gameserv/common/geom"
 )
 
 // Player represents a player, either a remotely-connected client or a local bot.
@@ -12,12 +14,12 @@ type Player struct {
 	// Inputs
 	Name  string
 	Color uint8
-	D     Vec2 // Destination
+	D     geom.Vec2 // Destination
 
 	// Game State
-	O Vec2    // Origin
-	M uint    // Mass
-	R float64 // Radius (cuberoot(mass))
+	O geom.Vec2 // Origin
+	M uint      // Mass
+	R float64   // Radius (cuberoot(mass))
 
 	Kills   uint
 	Deaths  uint

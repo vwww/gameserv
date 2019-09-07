@@ -1,4 +1,4 @@
-package duel
+package geom
 
 import (
 	"math"

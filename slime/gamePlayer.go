@@ -2,12 +2,15 @@ package slime
 
 import (
 	"bytes"
+	"fmt"
 	"sync"
+
+	"victorz.ca/gameserv/common/geom"
 )
 
 // MoveState is the origin (position) and velocity of dynamic entities.
 type MoveState struct {
-	O, V Vec2
+	O, V geom.Vec2
 }
 
 // InputState represents client input (which keys on keyboard are pressed).
@@ -51,6 +54,16 @@ func (p *Player) Close() {
 		p.Stopped = true
 		close(p.Stop)
 	})
+}
+
+// LogNameEnter returns a name for logging when connecting.
+func (p *Player) LogNameEnter() string {
+	return fmt.Sprintf("%v #%06x", p.Name, p.Color)
+}
+
+// LogNameLeave returns a name for logging when leaving.
+func (p *Player) LogNameLeave() string {
+	return p.Name
 }
 
 // filterName sanitizes a name.
