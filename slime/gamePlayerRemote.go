@@ -8,25 +8,14 @@ import (
 // RemotePlayer handles the network message protocol for a Player.
 type RemotePlayer struct {
 	*Player
-	SendBuf chan []byte // TODO FIXME needs to be closed?
+	Send func(b []byte)
 }
 
 // newRemotePlayer makes a new RemotePlayer for a Player
 func newRemotePlayer(p *Player) RemotePlayer {
 	return RemotePlayer{
 		p,
-		make(chan []byte, 70), // enough for at least 2 seconds
-	}
-}
-
-// Send enqueues an outgoing message, or
-// on failure, closes the Player.
-func (r *RemotePlayer) Send(b []byte) {
-	select {
-	case r.SendBuf <- b:
-	default:
-		// queue overflow
-		r.Close()
+		nil,
 	}
 }
 

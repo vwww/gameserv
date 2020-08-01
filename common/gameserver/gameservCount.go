@@ -11,7 +11,6 @@ import (
 // GameServerCount extends BaseGameServer by counting the number of players.
 type GameServerCount struct {
 	BaseGameServer
-	Responder
 
 	count     uint // current number of players
 	countLock sync.RWMutex
@@ -24,9 +23,8 @@ func NewGameServerCount(r Responder, sendBufSize uint) *GameServerCount {
 			nil,
 			sendBufSize,
 		},
-		Responder: r,
 	}
-	g.BaseGameServer.Responder = gameServerCountImpl{&g}
+	g.BaseGameServer.Responder = gameServerCountImpl{r, &g}
 	return &g
 }
 
@@ -42,7 +40,10 @@ func (g *GameServerCount) HandleNum(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%v", g.Count())
 }
 
-type gameServerCountImpl struct{ *GameServerCount }
+type gameServerCountImpl struct {
+	Responder
+	*GameServerCount
+}
 
 var _ Responder = gameServerCountImpl{}
 

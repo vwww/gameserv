@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Responder is an interface that handles GameServer events.
 type Responder interface {
 	PlayerConnected(r *http.Request)
 	PlayerUpgradeFail(r *http.Request, err error)
@@ -16,7 +17,24 @@ type Responder interface {
 	MessageReceived(player *BinaryPlayer, msg []byte)
 }
 
-// BaseGameServer is a server
+type defaultResponder struct{}
+
+var _ Responder = defaultResponder{}
+
+func (d defaultResponder) PlayerConnected(r *http.Request)                         {}
+func (d defaultResponder) PlayerUpgradeFail(r *http.Request, err error)            {}
+func (d defaultResponder) PlayerUpgradeSuccess(r *http.Request, c *websocket.Conn) {}
+func (d defaultResponder) PlayerInit(c *websocket.Conn) interface{}                { return nil }
+func (d defaultResponder) PlayerJoined(c *websocket.Conn, player *BinaryPlayer)    {}
+func (d defaultResponder) PlayerLeft(c *websocket.Conn, player *BinaryPlayer)      {}
+func (d defaultResponder) MessageReceived(player *BinaryPlayer, msg []byte)        {}
+
+// DefaultResponder creates a Responder whose empty receivers do nothing.
+func DefaultResponder() Responder {
+	return defaultResponder{}
+}
+
+// BaseGameServer is a game server that runs on WebSockets.
 type BaseGameServer struct {
 	Responder Responder
 
@@ -74,6 +92,6 @@ func (g *BaseGameServer) HandlePlayer(w http.ResponseWriter, r *http.Request) {
 	defer g.Responder.PlayerLeft(c, p)
 	g.Responder.PlayerJoined(c, p)
 
-	go reader(c, p.Player.Recv, func(error) { p.Close() })
+	go reader(c, p.Player.recv, func(error) { p.Close() })
 	writer(c, p.Player.sendBuf)
 }

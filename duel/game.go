@@ -42,12 +42,12 @@ type Game struct {
 	nextPing       time.Time
 }
 
-func NewGame() Game {
+func NewGame() *Game {
 	var g Game
 	for i := 0; i < BOT_BALANCE; i++ {
 		g.players[i].InitBot()
 	}
-	return g
+	return &g
 }
 
 // AddPlayer adds a remotely-controlled player to the game and returns a Client,

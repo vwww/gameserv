@@ -29,7 +29,6 @@ type Player struct {
 	MoveState
 
 	Stop     chan struct{}
-	Stopped  bool
 	stopOnce sync.Once
 
 	Ping int
@@ -51,7 +50,6 @@ func NewPlayer(name []byte, col int) *Player {
 // the Stop chan will no longer block.
 func (p *Player) Close() {
 	p.stopOnce.Do(func() {
-		p.Stopped = true
 		close(p.Stop)
 	})
 }

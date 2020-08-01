@@ -287,13 +287,14 @@ func (g *Game) Run() {
 
 GAME_LOOP:
 	for {
-		switch {
-		case g.P1.Stopped:
+		select {
+		case <-g.P1.Stop:
 			g.P2.SendLeave()
 			break GAME_LOOP
-		case g.P2.Stopped:
+		case <-g.P2.Stop:
 			g.P1.SendLeave()
 			break GAME_LOOP
+		default:
 		}
 
 		now := time.Now()

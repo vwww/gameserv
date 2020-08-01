@@ -15,10 +15,9 @@ type Msg struct {
 // Player represents a connected client.
 type Player struct {
 	Data interface{}
-
-	Recv func(Msg)
 	Stop chan struct{}
 
+	recv     func(Msg)
 	sendBuf  chan Msg
 	stopOnce sync.Once
 }
@@ -27,8 +26,9 @@ type Player struct {
 func NewPlayer(data interface{}, recv func(Msg), sendBufSize uint) Player {
 	return Player{
 		data,
-		recv,
 		make(chan struct{}),
+
+		recv,
 		make(chan Msg, sendBufSize),
 		sync.Once{},
 	}

@@ -25,7 +25,7 @@ func NewServer() Server {
 	var s Server
 	s.matcher = make(chan matchReq)
 	s.GameServerCount = gameserver.NewGameServerCount(servImpl{
-		gameserver.NewLogCountResponder(&s, &s),
+		gameserver.NewLogCountResponder(gameserver.DefaultResponder{}, &s),
 		&s,
 	}, sendBufSize)
 	return s
@@ -38,7 +38,7 @@ func (s *Server) Run() {
 }
 
 type servImpl struct {
-	gameserver.LogCountResponder
+	gameserver.Responder
 	server *Server
 }
 
@@ -47,7 +47,24 @@ func (s servImpl) PlayerInit(c *websocket.Conn) interface{} {
 }
 
 func (s servImpl) PlayerJoined(c *websocket.Conn, player *gameserver.BinaryPlayer) {
-	go playMatches(player.Data.(*Player), s.server.matcher)
+	s.Responder.PlayerJoined(c, player)
+
+	data := player.Data.(*Player)
+	data.Send = player.Send
+	go playMatches(data, s.server.matcher)
+}
+
+func (s servImpl) PlayerLeft(c *websocket.Conn, player *gameserver.BinaryPlayer) {
+	player.Data.(*Player).Close()
+
+	s.Responder.PlayerLeft(c, player)
+}
+
+func (s servImpl) MessageReceived(player *gameserver.BinaryPlayer, msg []byte) {
+	s.Responder.MessageReceived(player, msg)
+
+	data := player.Data.(*Player)
+	data.Recv(msg)
 }
 
 func processHello(c *websocket.Conn) *Player {

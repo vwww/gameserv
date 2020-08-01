@@ -26,6 +26,7 @@ func hello(res http.ResponseWriter, req *http.Request) {
 
 // Entry point of server program
 func main() {
+	// go slimeServer.Run()
 	go duelGame.Run()
 
 	bind := ":8080"

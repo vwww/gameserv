@@ -35,22 +35,19 @@ func (msg WSPreparedWriter) Write(c *websocket.Conn) error {
 }
 
 type Client struct {
-	g       *Game
-	cn      int
-	SendBuf <-chan WSWriter
-	sendBuf chan<- WSWriter
-	lock    sync.Mutex
-	ping    uint16
+	g            *Game
+	cn           int
+	SendCallback func(b []byte)
+	lock         sync.Mutex
+	ping         uint16
 }
 
 // newClient makes a new Client for a specific game and client number.
 func newClient(g *Game, cn int) *Client {
-	sendBuf := make(chan WSWriter, 300) // enough for at least 2 seconds
 	return &Client{
 		g,
 		cn,
-		sendBuf,
-		sendBuf,
+		nil,
 		sync.Mutex{},
 		0xFFFF,
 	}
@@ -66,11 +63,8 @@ func (c *Client) Send(msg WSWriter) {
 		return
 	}
 
-	select {
-	case c.sendBuf <- msg:
-	default:
-		// send queue overflow
-		c.Close()
+	if c.SendCallback != nil {
+		c.SendCallback(msg)
 	}
 }
 
