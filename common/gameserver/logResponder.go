@@ -31,33 +31,26 @@ type LogNamer interface {
 	LogNameLeave() string
 }
 
-type LogNamerPointer[B any] interface {
-	*B
-	LogNamer
-}
-
-type LogCountResponder[B any, P LogNamerPointer[B]] struct {
+type LogCountResponder[P LogNamer] struct {
 	LogResponder[P]
 	counter Counter
 }
 
-func assertInterface_LogCountResponder[B any, P LogNamerPointer[B]]() {
-	var _ Responder[P] = LogCountResponder[B, P]{}
-}
+func assertInterface_LogCountResponder[P LogNamer]() { var _ Responder[P] = LogCountResponder[P]{} }
 
-func NewLogCountResponder[B any, P LogNamerPointer[B]](r Responder[P], counter Counter) LogCountResponder[B, P] {
-	return LogCountResponder[B, P]{
+func NewLogCountResponder[P LogNamer](r Responder[P], counter Counter) LogCountResponder[P] {
+	return LogCountResponder[P]{
 		NewLogResponder(r),
 		counter,
 	}
 }
 
-func (l LogCountResponder[B, P]) PlayerJoined(c *websocket.Conn, player *BinaryPlayer[P]) {
+func (l LogCountResponder[P]) PlayerJoined(c *websocket.Conn, player *BinaryPlayer[P]) {
 	l.LogResponder.PlayerJoined(c, player)
 	log.Printf("+[%v] %v (%v now)\n", c.RemoteAddr(), player.Data.LogNameEnter(), l.counter.Count())
 }
 
-func (l LogCountResponder[B, P]) PlayerLeft(c *websocket.Conn, player *BinaryPlayer[P]) {
+func (l LogCountResponder[P]) PlayerLeft(c *websocket.Conn, player *BinaryPlayer[P]) {
 	l.LogResponder.PlayerLeft(c, player)
 	log.Printf("-[%v] %v (%v now)\n", c.RemoteAddr(), player.Data.LogNameLeave(), l.counter.Count())
 }
