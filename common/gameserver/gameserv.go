@@ -21,8 +21,6 @@ type Tester Responder[func(a, b int) string]
 
 type defaultResponder[P any] struct{}
 
-func assertInterface_defaultResponder[P any]() { var _ Responder[*P] = defaultResponder[P]{} }
-
 func (d defaultResponder[P]) PlayerConnected(r *http.Request)                          {}
 func (d defaultResponder[P]) PlayerUpgradeFail(r *http.Request, err error)             {}
 func (d defaultResponder[P]) PlayerUpgradeSuccess(r *http.Request, c *websocket.Conn)  {}

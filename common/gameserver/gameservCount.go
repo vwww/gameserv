@@ -24,7 +24,7 @@ func NewGameServerCount[P any](r Responder[*P], sendBufSize uint) *GameServerCou
 			sendBufSize,
 		},
 	}
-	g.BaseGameServer.Responder = gameServerCountImpl[P]{r, &g}
+	g.BaseGameServer.Responder = &g
 	return &g
 }
 
@@ -40,14 +40,7 @@ func (g *GameServerCount[P]) HandleNum(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "%v", g.Count())
 }
 
-type gameServerCountImpl[P any] struct {
-	Responder[*P]
-	*GameServerCount[P]
-}
-
-func assertInterface_gameServerCountImpl[P any]() { var _ Responder[*P] = gameServerCountImpl[P]{} }
-
-func (g gameServerCountImpl[P]) PlayerJoined(c *websocket.Conn, player *BinaryPlayer[*P]) {
+func (g *GameServerCount[P]) PlayerJoined(c *websocket.Conn, player *BinaryPlayer[*P]) {
 	g.countLock.Lock()
 	g.count++
 	g.countLock.Unlock()
@@ -55,7 +48,7 @@ func (g gameServerCountImpl[P]) PlayerJoined(c *websocket.Conn, player *BinaryPl
 	g.Responder.PlayerJoined(c, player)
 }
 
-func (g gameServerCountImpl[P]) PlayerLeft(c *websocket.Conn, player *BinaryPlayer[*P]) {
+func (g *GameServerCount[P]) PlayerLeft(c *websocket.Conn, player *BinaryPlayer[*P]) {
 	g.countLock.Lock()
 	g.count--
 	g.countLock.Unlock()

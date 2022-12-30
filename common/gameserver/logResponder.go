@@ -9,8 +9,6 @@ import (
 
 type LogResponder[P any] struct{ Responder[P] }
 
-func assertInterface_LogResponder[P any]() { var _ Responder[P] = LogResponder[P]{} }
-
 func NewLogResponder[P any](r Responder[P]) LogResponder[P] {
 	return LogResponder[P]{r}
 }
@@ -35,8 +33,6 @@ type LogCountResponder[P LogNamer] struct {
 	LogResponder[P]
 	counter Counter
 }
-
-func assertInterface_LogCountResponder[P LogNamer]() { var _ Responder[P] = LogCountResponder[P]{} }
 
 func NewLogCountResponder[P LogNamer](r Responder[P], counter Counter) LogCountResponder[P] {
 	return LogCountResponder[P]{
