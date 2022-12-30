@@ -14,7 +14,7 @@ type matchReq struct {
 
 // Server is a Slime Volleyball Multiplayer game server.
 type Server struct {
-	*gameserver.GameServerCount
+	*gameserver.GameServerCount[Player]
 	matcher chan matchReq
 }
 
@@ -24,8 +24,8 @@ func NewServer() Server {
 
 	var s Server
 	s.matcher = make(chan matchReq)
-	s.GameServerCount = gameserver.NewGameServerCount(servImpl{
-		gameserver.NewLogCountResponder(gameserver.DefaultResponder(), &s),
+	s.GameServerCount = gameserver.NewGameServerCount[Player](servImpl{
+		gameserver.NewLogCountResponder(gameserver.DefaultResponder[Player](), &s),
 		&s,
 	}, sendBufSize)
 	return s
@@ -38,33 +38,31 @@ func (s *Server) Run() {
 }
 
 type servImpl struct {
-	gameserver.Responder
+	gameserver.Responder[*Player]
 	server *Server
 }
 
-func (s servImpl) PlayerInit(c *websocket.Conn) interface{} {
+func (s servImpl) PlayerInit(c *websocket.Conn) *Player {
 	return processHello(c)
 }
 
-func (s servImpl) PlayerJoined(c *websocket.Conn, player *gameserver.BinaryPlayer) {
+func (s servImpl) PlayerJoined(c *websocket.Conn, player *gameserver.BinaryPlayer[*Player]) {
 	s.Responder.PlayerJoined(c, player)
 
-	data := player.Data.(*Player)
-	data.Send = player.Send
-	go playMatches(data, s.server.matcher)
+	player.Data.Send = player.Send
+	go playMatches(player.Data, s.server.matcher)
 }
 
-func (s servImpl) PlayerLeft(c *websocket.Conn, player *gameserver.BinaryPlayer) {
-	player.Data.(*Player).Close()
+func (s servImpl) PlayerLeft(c *websocket.Conn, player *gameserver.BinaryPlayer[*Player]) {
+	player.Data.Close()
 
 	s.Responder.PlayerLeft(c, player)
 }
 
-func (s servImpl) MessageReceived(player *gameserver.BinaryPlayer, msg []byte) {
+func (s servImpl) MessageReceived(player *gameserver.BinaryPlayer[*Player], msg []byte) {
 	s.Responder.MessageReceived(player, msg)
 
-	data := player.Data.(*Player)
-	data.Recv(msg)
+	player.Data.Recv(msg)
 }
 
 func processHello(c *websocket.Conn) *Player {

@@ -7,36 +7,38 @@ import (
 )
 
 // Responder is an interface that handles GameServer events.
-type Responder interface {
+type Responder[P any] interface {
 	PlayerConnected(r *http.Request)
 	PlayerUpgradeFail(r *http.Request, err error)
 	PlayerUpgradeSuccess(r *http.Request, c *websocket.Conn)
-	PlayerInit(c *websocket.Conn) interface{}
-	PlayerJoined(c *websocket.Conn, player *BinaryPlayer)
-	PlayerLeft(c *websocket.Conn, player *BinaryPlayer)
-	MessageReceived(player *BinaryPlayer, msg []byte)
+	PlayerInit(c *websocket.Conn) P
+	PlayerJoined(c *websocket.Conn, player *BinaryPlayer[P])
+	PlayerLeft(c *websocket.Conn, player *BinaryPlayer[P])
+	MessageReceived(player *BinaryPlayer[P], msg []byte)
 }
 
-type defaultResponder struct{}
+type Tester Responder[func(a, b int) string]
 
-var _ Responder = defaultResponder{}
+type defaultResponder[P any] struct{}
 
-func (d defaultResponder) PlayerConnected(r *http.Request)                         {}
-func (d defaultResponder) PlayerUpgradeFail(r *http.Request, err error)            {}
-func (d defaultResponder) PlayerUpgradeSuccess(r *http.Request, c *websocket.Conn) {}
-func (d defaultResponder) PlayerInit(c *websocket.Conn) interface{}                { return nil }
-func (d defaultResponder) PlayerJoined(c *websocket.Conn, player *BinaryPlayer)    {}
-func (d defaultResponder) PlayerLeft(c *websocket.Conn, player *BinaryPlayer)      {}
-func (d defaultResponder) MessageReceived(player *BinaryPlayer, msg []byte)        {}
+func assertInterface_defaultResponder[P any]() { var _ Responder[*P] = defaultResponder[P]{} }
+
+func (d defaultResponder[P]) PlayerConnected(r *http.Request)                          {}
+func (d defaultResponder[P]) PlayerUpgradeFail(r *http.Request, err error)             {}
+func (d defaultResponder[P]) PlayerUpgradeSuccess(r *http.Request, c *websocket.Conn)  {}
+func (d defaultResponder[P]) PlayerInit(c *websocket.Conn) *P                          { return nil }
+func (d defaultResponder[P]) PlayerJoined(c *websocket.Conn, player *BinaryPlayer[*P]) {}
+func (d defaultResponder[P]) PlayerLeft(c *websocket.Conn, player *BinaryPlayer[*P])   {}
+func (d defaultResponder[P]) MessageReceived(player *BinaryPlayer[*P], msg []byte)     {}
 
 // DefaultResponder creates a Responder whose empty receivers do nothing.
-func DefaultResponder() Responder {
-	return defaultResponder{}
+func DefaultResponder[P any]() Responder[*P] {
+	return defaultResponder[P]{}
 }
 
 // BaseGameServer is a game server that runs on WebSockets.
-type BaseGameServer struct {
-	Responder Responder
+type BaseGameServer[P any] struct {
+	Responder[*P]
 
 	SendBufSize uint
 }
@@ -65,7 +67,7 @@ func writer(c *websocket.Conn, msgChan <-chan Msg) {
 }
 
 // HandlePlayer serves a game client.
-func (g *BaseGameServer) HandlePlayer(w http.ResponseWriter, r *http.Request) {
+func (g *BaseGameServer[P]) HandlePlayer(w http.ResponseWriter, r *http.Request) {
 	g.Responder.PlayerConnected(r)
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

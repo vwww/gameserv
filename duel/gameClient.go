@@ -84,3 +84,13 @@ func (c *Client) Close() {
 		c.cn = -1
 	}
 }
+
+// LogNameEnter returns a name for logging when connecting.
+func (p *Client) LogNameEnter() string {
+	return p.g.players[p.cn].Name
+}
+
+// LogNameLeave returns a name for logging when leaving.
+func (p *Client) LogNameLeave() string {
+	return p.LogNameEnter()
+}

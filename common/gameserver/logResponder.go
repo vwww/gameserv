@@ -7,19 +7,19 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type LogResponder struct{ Responder }
+type LogResponder[P any] struct{ Responder[P] }
 
-var _ Responder = LogResponder{}
+func assertInterface_LogResponder[P any]() { var _ Responder[P] = LogResponder[P]{} }
 
-func NewLogResponder(r Responder) LogResponder {
-	return LogResponder{r}
+func NewLogResponder[P any](r Responder[P]) LogResponder[P] {
+	return LogResponder[P]{r}
 }
 
-func (l LogResponder) PlayerConnected(r *http.Request) {
+func (l LogResponder[P]) PlayerConnected(r *http.Request) {
 	log.Printf(" [%v] connected\n", r.RemoteAddr)
 	l.Responder.PlayerConnected(r)
 }
-func (l LogResponder) PlayerUpgradeFail(r *http.Request, err error) {
+func (l LogResponder[P]) PlayerUpgradeFail(r *http.Request, err error) {
 	log.Printf("*[%v] upgrade failed: %v\n", r.RemoteAddr, err)
 	l.Responder.PlayerUpgradeFail(r, err)
 }
@@ -31,26 +31,33 @@ type LogNamer interface {
 	LogNameLeave() string
 }
 
-type LogCountResponder struct {
-	LogResponder
+type LogNamerPointer[B any] interface {
+	*B
+	LogNamer
+}
+
+type LogCountResponder[B any, P LogNamerPointer[B]] struct {
+	LogResponder[P]
 	counter Counter
 }
 
-var _ Responder = LogCountResponder{}
+func assertInterface_LogCountResponder[B any, P LogNamerPointer[B]]() {
+	var _ Responder[P] = LogCountResponder[B, P]{}
+}
 
-func NewLogCountResponder(r Responder, counter Counter) LogCountResponder {
-	return LogCountResponder{
+func NewLogCountResponder[B any, P LogNamerPointer[B]](r Responder[P], counter Counter) LogCountResponder[B, P] {
+	return LogCountResponder[B, P]{
 		NewLogResponder(r),
 		counter,
 	}
 }
 
-func (l LogCountResponder) PlayerJoined(c *websocket.Conn, player *BinaryPlayer) {
+func (l LogCountResponder[B, P]) PlayerJoined(c *websocket.Conn, player *BinaryPlayer[P]) {
 	l.LogResponder.PlayerJoined(c, player)
-	log.Printf("+[%v] %v (%v now)\n", c.RemoteAddr(), player.Data.(LogNamer).LogNameEnter(), l.counter.Count())
+	log.Printf("+[%v] %v (%v now)\n", c.RemoteAddr(), player.Data.LogNameEnter(), l.counter.Count())
 }
 
-func (l LogCountResponder) PlayerLeft(c *websocket.Conn, player *BinaryPlayer) {
+func (l LogCountResponder[B, P]) PlayerLeft(c *websocket.Conn, player *BinaryPlayer[P]) {
 	l.LogResponder.PlayerLeft(c, player)
-	log.Printf("-[%v] %v (%v now)\n", c.RemoteAddr(), player.Data.(LogNamer).LogNameLeave(), l.counter.Count())
+	log.Printf("-[%v] %v (%v now)\n", c.RemoteAddr(), player.Data.LogNameLeave(), l.counter.Count())
 }

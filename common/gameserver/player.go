@@ -13,8 +13,8 @@ type Msg struct {
 }
 
 // Player represents a connected client.
-type Player struct {
-	Data interface{}
+type Player[D any] struct {
+	Data D
 	Stop chan struct{}
 
 	recv     func(Msg)
@@ -23,8 +23,8 @@ type Player struct {
 }
 
 // NewPlayer makes a Player with the embedded data, receive callback, and send buffer size.
-func NewPlayer(data interface{}, recv func(Msg), sendBufSize uint) Player {
-	return Player{
+func NewPlayer[D any](data D, recv func(Msg), sendBufSize uint) Player[D] {
+	return Player[D]{
 		data,
 		make(chan struct{}),
 
@@ -36,7 +36,7 @@ func NewPlayer(data interface{}, recv func(Msg), sendBufSize uint) Player {
 
 // Send enqueues an outgoing message, or
 // on failure, closes the Player.
-func (p *Player) Send(msg Msg) {
+func (p *Player[D]) Send(msg Msg) {
 	select {
 	case p.sendBuf <- msg:
 	default:
@@ -47,28 +47,28 @@ func (p *Player) Send(msg Msg) {
 
 // Close marks the player as "stopped" by closing the send and stop channels.
 // Close must not be called multiple times.
-func (p *Player) Close() {
+func (p *Player[D]) Close() {
 	close(p.Stop)
 	close(p.sendBuf)
 }
 
 // BinaryPlayer is an adapter for Player, which sends binary messages
 // and ignores incoming message types.
-type BinaryPlayer struct {
-	Player
+type BinaryPlayer[D any] struct {
+	Player[D]
 
 	Recv func([]byte)
 }
 
 // NewBinaryPlayer makes a BinaryPlayer.
-func NewBinaryPlayer(data interface{}, recv func([]byte), sendBufSize uint) *BinaryPlayer {
-	var p BinaryPlayer
+func NewBinaryPlayer[D any](data D, recv func([]byte), sendBufSize uint) *BinaryPlayer[D] {
+	var p BinaryPlayer[D]
 	p.Recv = recv
 	p.Player = NewPlayer(data, func(m Msg) { p.Recv(m.Payload) }, sendBufSize)
 	return &p
 }
 
 // Send sends the byte slice as a binary message over the websocket.
-func (p *BinaryPlayer) Send(b []byte) {
+func (p *BinaryPlayer[D]) Send(b []byte) {
 	p.Player.Send(Msg{websocket.BinaryMessage, b})
 }

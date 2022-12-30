@@ -8,7 +8,7 @@ import (
 
 // Server is a Duel game server.
 type Server struct {
-	*gameserver.GameServerCount
+	*gameserver.GameServerCount[Client]
 	*Game
 }
 
@@ -18,8 +18,8 @@ func NewServer() Server {
 
 	var s Server
 	s.Game = NewGame()
-	s.GameServerCount = gameserver.NewGameServerCount(servImpl{
-		gameserver.NewLogCountResponder(gameserver.DefaultResponder(), &s),
+	s.GameServerCount = gameserver.NewGameServerCount[Client](servImpl{
+		gameserver.NewLogCountResponder(gameserver.DefaultResponder[Client](), &s),
 		&s,
 	}, sendBufSize)
 	return s
@@ -32,30 +32,28 @@ func (s *Server) Run() {
 }
 
 type servImpl struct {
-	gameserver.Responder
+	gameserver.Responder[*Client]
 	server *Server
 }
 
-func (s servImpl) PlayerInit(c *websocket.Conn) interface{} {
+func (s servImpl) PlayerInit(c *websocket.Conn) *Client {
 	return s.server.AddPlayer(processHello(c))
 }
 
-func (s servImpl) PlayerJoined(c *websocket.Conn, player *gameserver.BinaryPlayer) {
+func (s servImpl) PlayerJoined(c *websocket.Conn, player *gameserver.BinaryPlayer[*Client]) {
 	s.Responder.PlayerJoined(c, player)
 
-	data := player.Data.(*Player)
-	data.Conn = c
+	player.Data.Conn = c
 }
 
-func (s servImpl) PlayerLeft(c *websocket.Conn, player *gameserver.BinaryPlayer) {
-	player.Data.(*Player).Close()
+func (s servImpl) PlayerLeft(c *websocket.Conn, player *gameserver.BinaryPlayer[*Client]) {
+	player.Data.Close()
 
 	s.Responder.PlayerLeft(c, player)
 }
 
-func (s servImpl) MessageReceived(player *gameserver.BinaryPlayer, msg []byte) {
+func (s servImpl) MessageReceived(player *gameserver.BinaryPlayer[*Client], msg []byte) {
 	s.Responder.MessageReceived(player, msg)
 
-	data := player.Data.(*Player)
-	Recv(data.Client, msg)
+	Recv(player.Data, msg)
 }
