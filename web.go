@@ -10,7 +10,7 @@ import (
 )
 
 var slimeServer = slime.NewServer()
-var duelGame = duel.NewGame()
+var duelGame = duel.NewServer()
 
 func init() {
 	http.HandleFunc("/s/n", slimeServer.HandleNum)

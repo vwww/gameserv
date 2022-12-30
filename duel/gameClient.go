@@ -35,11 +35,11 @@ func (msg WSPreparedWriter) Write(c *websocket.Conn) error {
 }
 
 type Client struct {
-	g            *Game
-	cn           int
-	SendCallback func(b []byte)
-	lock         sync.Mutex
-	ping         uint16
+	g    *Game
+	cn   int
+	Conn *websocket.Conn
+	lock sync.Mutex
+	ping uint16
 }
 
 // newClient makes a new Client for a specific game and client number.
@@ -63,8 +63,8 @@ func (c *Client) Send(msg WSWriter) {
 		return
 	}
 
-	if c.SendCallback != nil {
-		c.SendCallback(msg)
+	if c.Conn != nil {
+		msg.Write(c.Conn)
 	}
 }
 
@@ -80,7 +80,6 @@ func (c *Client) Close() {
 	defer c.lock.Unlock()
 
 	if c.cn != -1 {
-		close(c.sendBuf)
 		c.g.DelPlayer(c.cn)
 		c.cn = -1
 	}

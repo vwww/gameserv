@@ -19,7 +19,7 @@ func NewServer() Server {
 	var s Server
 	s.Game = NewGame()
 	s.GameServerCount = gameserver.NewGameServerCount(servImpl{
-		gameserver.NewLogCountResponder(gameserver.DefaultResponder{}, &s),
+		gameserver.NewLogCountResponder(gameserver.DefaultResponder(), &s),
 		&s,
 	}, sendBufSize)
 	return s
@@ -44,8 +44,7 @@ func (s servImpl) PlayerJoined(c *websocket.Conn, player *gameserver.BinaryPlaye
 	s.Responder.PlayerJoined(c, player)
 
 	data := player.Data.(*Player)
-	data.SendCallback = player.Send
-	go playMatches(data, s.server.matcher)
+	data.Conn = c
 }
 
 func (s servImpl) PlayerLeft(c *websocket.Conn, player *gameserver.BinaryPlayer) {

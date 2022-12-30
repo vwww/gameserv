@@ -25,7 +25,7 @@ func NewServer() Server {
 	var s Server
 	s.matcher = make(chan matchReq)
 	s.GameServerCount = gameserver.NewGameServerCount(servImpl{
-		gameserver.NewLogCountResponder(gameserver.DefaultResponder{}, &s),
+		gameserver.NewLogCountResponder(gameserver.DefaultResponder(), &s),
 		&s,
 	}, sendBufSize)
 	return s
